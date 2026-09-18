@@ -81,35 +81,38 @@ function Memberships() {
         )
         .sort(
           (a, b) =>
-            new Date(b.plan_end_date) - new Date(a.plan_end_date)
+            new Date(b.plan_end_date) -
+            new Date(a.plan_end_date)
         )[0] || null
     );
   };
 
-  const calculateEndDate = (startDate, duration, durationType) => {
-    if (!startDate || !duration || !durationType) {
+  const calculateEndDate = (startDate, planName) => {
+    if (!startDate || !planName) {
       return "";
     }
 
     const date = new Date(`${startDate}T00:00:00`);
-    const value = Number(duration);
 
-    if (durationType === "day") {
-      date.setDate(date.getDate() + value);
+    const durations = {
+      Monthly: 1,
+      Quarterly: 3,
+      "Half-Yearly": 6,
+      Yearly: 12
+    };
+
+    const months = durations[planName];
+
+    if (!months) {
+      return "";
     }
 
-    if (durationType === "week") {
-      date.setDate(date.getDate() + value * 7);
-    }
+    const originalDay = date.getDate();
 
-    if (durationType === "month") {
-      const originalDay = date.getDate();
+    date.setMonth(date.getMonth() + months);
 
-      date.setMonth(date.getMonth() + value);
-
-      if (date.getDate() !== originalDay) {
-        date.setDate(0);
-      }
+    if (date.getDate() !== originalDay) {
+      date.setDate(0);
     }
 
     return formatDateInput(date);
@@ -131,8 +134,7 @@ function Memberships() {
 
     const end = calculateEndDate(
       start,
-      selectedPlan.plan_duration,
-      selectedPlan.duration_type
+      selectedPlan.plan_name
     );
 
     return {
@@ -187,7 +189,10 @@ function Memberships() {
       return;
     }
 
-    const dates = calculateDates(formData.member_id, selectedPlan);
+    const dates = calculateDates(
+      formData.member_id,
+      selectedPlan
+    );
 
     setFormData((previous) => ({
       ...previous,
@@ -209,8 +214,7 @@ function Memberships() {
     const endDate = selectedPlan
       ? calculateEndDate(
           startDate,
-          selectedPlan.plan_duration,
-          selectedPlan.duration_type
+          selectedPlan.plan_name
         )
       : "";
 
@@ -227,6 +231,7 @@ function Memberships() {
         type: "error",
         message: "Please select a member."
       });
+
       return false;
     }
 
@@ -235,6 +240,7 @@ function Memberships() {
         type: "error",
         message: "Please select a membership plan."
       });
+
       return false;
     }
 
@@ -243,6 +249,7 @@ function Memberships() {
         type: "error",
         message: "Membership amount is invalid."
       });
+
       return false;
     }
 
@@ -251,6 +258,7 @@ function Memberships() {
         type: "error",
         message: "Membership duration must be greater than 0."
       });
+
       return false;
     }
 
@@ -259,6 +267,7 @@ function Memberships() {
         type: "error",
         message: "Please select a start date."
       });
+
       return false;
     }
 
@@ -267,6 +276,7 @@ function Memberships() {
         type: "error",
         message: "Membership end date could not be calculated."
       });
+
       return false;
     }
 
@@ -283,6 +293,7 @@ function Memberships() {
         type: "error",
         message: "End date cannot be before start date."
       });
+
       return false;
     }
 
@@ -432,10 +443,14 @@ function Memberships() {
       const value = search.trim().toLowerCase();
 
       result = result.filter((membership) => {
-        const memberName = getMemberName(membership.member_id);
+        const memberName = getMemberName(
+          membership.member_id
+        );
 
         return (
-          membership.plan_name?.toLowerCase().includes(value) ||
+          membership.plan_name
+            ?.toLowerCase()
+            .includes(value) ||
           memberName.toLowerCase().includes(value) ||
           String(membership.plan_amount).includes(value)
         );
@@ -451,7 +466,8 @@ function Memberships() {
 
     if (planFilter !== "All Plans") {
       result = result.filter(
-        (membership) => membership.plan_name === planFilter
+        (membership) =>
+          membership.plan_name === planFilter
       );
     }
 
@@ -507,8 +523,6 @@ function Memberships() {
 
       <div className="mx-auto w-full max-w-[1250px]">
 
-        {/* Part 1: Page Header */}
-
         <div className="mb-5 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
 
           <div>
@@ -546,8 +560,6 @@ function Memberships() {
           </button>
 
         </div>
-
-        {/* Part 2: Add/Edit Membership Form */}
 
         {showForm && (
           <div className="mb-5 rounded-xl border border-white/10 bg-[#0b1620] p-4 sm:p-5">
@@ -699,8 +711,6 @@ function Memberships() {
           </div>
         )}
 
-        {/* Part 3: Search, Filters and Sorting */}
-
         <div className="mb-4 w-full rounded-xl border border-white/10 bg-[#0b1620] p-3 sm:p-4">
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -750,8 +760,6 @@ function Memberships() {
 
           </div>
         </div>
-
-        {/* Part 4: Membership Table */}
 
         <div className="mx-auto w-full max-w-[1100px] overflow-hidden rounded-xl border border-white/10 bg-[#0b1620]">
 
@@ -903,8 +911,6 @@ function Memberships() {
 
           </div>
         </div>
-
-        {/* Part 5: Delete Confirmation */}
 
         <DeleteConfirmModal
           isOpen={deleteId !== null}
